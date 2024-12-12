@@ -1,0 +1,13 @@
+For this blog, these were the files that had to be adjusted:
+* admin.py
+* models.py
+* routes.py
+* add in the empty_pot.jpg in the image folder
+* layout.js
+* flux.js
+* blog.js
+* blogDetails.js
+* blog.css
+
+Rest for authentication:
+* models.py, routes.py, flux.js, login.js, signup.js
