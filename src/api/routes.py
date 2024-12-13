@@ -6,6 +6,10 @@ from api.models import db, User, BlogPost, PostLike, Comment, CommentLike
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+from datetime import datetime, timedelta
+
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
@@ -20,6 +24,80 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+
+# ----------------------------- authentication routes -----------------------------
+# ----------------------------- authentication routes -----------------------------
+# ----------------------------- authentication routes -----------------------------
+# ----------------------------- authentication routes -----------------------------
+@api.route('/check-availability', methods=['POST'])
+def check_availability():
+    field = request.json.get('field')
+    value = request.json.get('value')
+
+    if field not in ['username', 'email']:
+        return jsonify({"error": "Invalid field"}), 400
+    
+    # Use getattr to dynamically access either User.username or User.email depending on which field was passed
+    user = User.query.filter(getattr(User, field) == value).first()
+
+    # Return true if no user was found (meaning the username/email is available)
+    return jsonify({"isAvailable": user is None}), 200
+
+@api.route('/signup', methods=['POST'])
+def signup_user():
+    email = request.json.get('email')
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    existing_user = User.query.filter_by(email = email).one_or_none()
+    if existing_user:
+        return jsonify({'error': 'There is already an account associated with this email address.'}), 400
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Username must be unique, please try another username."}), 400
+    
+    new_user = User(
+        email=email, 
+        username=username,
+        password=generate_password_hash(password), 
+        is_active=False,
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    response_body = {
+        "message": "User successfully created",
+        "user": new_user.serialize() 
+    }
+
+    return jsonify(response_body), 201
+
+@api.route("/login", methods=["POST"])
+def login_user():
+    login_identifier = request.json.get("loginIdentifier")
+    password = request.json.get("password")
+
+    user = User.query.filter(
+        db.or_(
+            User.email == login_identifier,
+            User.username == login_identifier
+        )
+    ).one_or_none()
+    if user is None:
+        return jsonify({"message": "No account found with this email/username"}), 404
+    
+    if not check_password_hash(user.password, password):
+        return jsonify({"message": "Incorrect password"}), 401
+    
+
+    access_token = create_access_token(
+        identity = user.id,
+        expires_delta=timedelta(hours=12)
+    )
+    return jsonify({
+        "token": access_token,
+        "userData": user.serialize()
+    }), 200
 
 
 # ----------------------------- blog routes -----------------------------

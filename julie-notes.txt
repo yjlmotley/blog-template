@@ -11,3 +11,14 @@ For this blog, these were the files that had to be adjusted:
 
 Rest for authentication:
 * models.py, routes.py, flux.js, login.js, signup.js
+
+
+
+TODOs:
+...last working on flux.js (authentication set up) 12.12.24
+- [ ] double check error messages clearly coming thru for signup and login - signup especially (same username/email etc.)
+- [ ] for the loginIdentifier (do the toLowerCase in the backend only for the email, not in the flux 
+ then make the username case sensitive on the signup and login)
+- [ ] login: make the forgot ps pass thru the tab key if possible 
+- [ ] login: make the forgot ps and the click here to signup prettier (text-sm)
+- [ ] signup: make changing the regular ps input also reset the not matching ps 

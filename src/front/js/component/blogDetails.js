@@ -17,10 +17,10 @@ const BlogDetails = () => {
 
     useEffect(() => {
         actions.fetchBlogAndComments(id);
-        if (store.userId) {
+        if (store.token) {
             actions.fetchUserLikeStatus(id);
         }
-    }, [id, store.userId]);
+    }, [id, store.token]);
 
     useEffect(() => {
         if (store.currentBlog) {
@@ -46,7 +46,7 @@ const BlogDetails = () => {
         }
         const success = await actions.deleteBlog(currentBlogId);
         if (success) {
-            navigate("/plantblog");
+            navigate("/blog");
         } else {
             alert("Failed to delete post");
         }
@@ -72,11 +72,11 @@ const BlogDetails = () => {
     return (
         <>
             <h4 className="mt-3 ms-3">
-                <Link to="/plantblog">Plant Blog</Link> /
+                <Link to="/blog">Blog</Link> /
             </h4>
             <div className="container mt-5 pb-5 blog-div">
                 <div className="card blog-card mb-5">
-                    {parseInt(store.userId) === store.currentBlog?.author_id && (
+                    {store.currentUser?.id === store.currentBlog?.author_id && (
                         <>
                             <button
                                 onClick={() => setIsEditing(!isEditing)}
@@ -97,19 +97,6 @@ const BlogDetails = () => {
 
                     {isEditing ? (
                         <form onSubmit={handleEditSubmit} className="card-body">
-                            <div className="mb-3">
-                                <label className="form-label">Image URL</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    value={editedBlog.image_url}
-                                    onChange={(e) => setEditedBlog({
-                                        ...editedBlog,
-                                        image_url: e.target.value
-                                    })}
-                                    placeholder="Enter image URL"
-                                />
-                            </div>
                             <div className="mb-3">
                                 <label className="form-label">Title</label>
                                 <input
@@ -134,6 +121,19 @@ const BlogDetails = () => {
                                         content: e.target.value
                                     })}
                                     required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Image URL</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={editedBlog.image_url}
+                                    onChange={(e) => setEditedBlog({
+                                        ...editedBlog,
+                                        image_url: e.target.value
+                                    })}
+                                    placeholder="Enter image URL"
                                 />
                             </div>
                             <div className="d-flex gap-2">
@@ -171,7 +171,7 @@ const BlogDetails = () => {
                                         <button
                                             onClick={() => actions.handleBlogLikeToggle(id, true)}
                                             className={`btn btn-outline-success me-2 ${store.currentBlog?.userLikeStatus === 'like' ? 'active' : ''}`}
-                                            disabled={!store.userId || parseInt(store.userId) === store.currentBlog?.author_id}
+                                            disabled={!store.token || store.currentUser.id === store.currentBlog?.author_id}
                                         >
                                             <i className="fas fa-thumbs-up me-1"></i>
                                             <span>{store.currentBlog?.likes_count || 0}</span>
@@ -179,7 +179,7 @@ const BlogDetails = () => {
                                         <button
                                             onClick={() => actions.handleBlogLikeToggle(id, false)}
                                             className={`btn btn-outline-danger ${store.currentBlog?.userLikeStatus === 'dislike' ? 'active' : ''}`}
-                                            disabled={!store.userId || parseInt(store.userId) === store.currentBlog?.author_id}
+                                            disabled={!store.token || store.currentUser.id === store.currentBlog?.author_id}
                                         >
                                             <i className="fas fa-thumbs-down me-1"></i>
                                             <span>{store.currentBlog?.dislikes_count || 0}</span>
@@ -196,7 +196,7 @@ const BlogDetails = () => {
                     <div className="card-body">
                         <h2 className="section-title mb-4">Comments</h2>
 
-                        {store.userId ? (
+                        {store.token ? (
                             <form onSubmit={handleCommentSubmit} className="mb-4">
                                 <div className="form-group">
                                     <textarea
@@ -237,7 +237,7 @@ const BlogDetails = () => {
                                                 <button
                                                     onClick={() => actions.handleCommentLikeToggle(id, comment.id, true)}
                                                     className={`btn btn-like ${comment.userLikeStatus === 'like' ? 'active' : ''}`}
-                                                    disabled={!store.userId || parseInt(store.userId) === comment.user_id}
+                                                    disabled={!store.token || store.currentUser.id === comment.user_id}
                                                 >
                                                     <i className="fas fa-thumbs-up me-1"></i>
                                                     <span>{comment.likes_count}</span>
@@ -245,13 +245,13 @@ const BlogDetails = () => {
                                                 <button
                                                     onClick={() => actions.handleCommentLikeToggle(id, comment.id, false)}
                                                     className={`btn btn-dislike ms-2 ${comment.userLikeStatus === 'dislike' ? 'active' : ''}`}
-                                                    disabled={!store.userId || parseInt(store.userId) === comment.user_id}
+                                                    disabled={!store.token || store.currentUser.id === comment.user_id}
                                                 >
                                                     <i className="fas fa-thumbs-down me-1"></i>
                                                     <span>{comment.dislikes_count}</span>
                                                 </button>
                                             </div>
-                                            {parseInt(store.userId) === comment.user_id && (
+                                            {store.currentUser?.id === comment.user_id && (
                                                 <button
                                                     onClick={() => actions.deleteComment(id, comment.id)}
                                                     className="btn btn-delete-comment"

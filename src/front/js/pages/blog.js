@@ -7,6 +7,7 @@ import "../../styles/blog.css";
 
 const Blog = () => {
     const { store, actions } = useContext(Context);
+    const [blogError, setBlogError] = useState("");
     const [showNewPost, setShowNewPost] = useState(false);
     const [newPost, setNewPost] = useState({
         title: "",
@@ -18,6 +19,13 @@ const Blog = () => {
     useEffect(() => {
         actions.fetchBlogs();
     }, []);
+
+    const handleShowNewPost = () => {
+        if (!store.token) {
+            setBlogError("Please log in to create a post");
+        }
+        setShowNewPost(!showNewPost)
+    }
 
     const handleDelete = async (blogId) => {
         if (!window.confirm("Are you sure you want to delete this post?")) {
@@ -33,6 +41,7 @@ const Blog = () => {
         e.preventDefault();
         const success = await actions.createBlogPost(newPost);
         if (success) {
+            alert("Your post is now online!");
             setNewPost({ title: "", content: "", image_url: "" });
         }
     };
@@ -41,68 +50,63 @@ const Blog = () => {
     return (
         <div className="container mt-5 pb-5 blog-div">
             {/* Create Post Section */}
-            {store.userId && (
-                <>
-                    <div className="d-flex mb-3">
-                        <button 
-                            className="btn btn-dark rounded-pill ms-auto"
-                            onClick={() => setShowNewPost(!showNewPost)}
-                        >
-                            {!showNewPost ? "Create a New Blog Post" : "Hide the Create New Post"}
-                            <i className="fas fa-circle-plus ms-2" />
-                        </button>
-                    </div>
-                    {showNewPost && (
-                        <div className="card mb-5">
-                            <div className="card-body">
-                                <h2 className="card-title mb-4">Create New Blog Post</h2>
-                                {store.blogError && (
-                                    <div className="alert alert-danger" role="alert">
-                                        {store.blogError}
-                                    </div>
-                                )}
-                                <form onSubmit={handleSubmit}>
-                                    <div className="mb-3">
-                                        <label htmlFor="title" className="form-label">Title</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            id="title"
-                                            value={newPost.title}
-                                            onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label htmlFor="content" className="form-label">Content</label>
-                                        <textarea
-                                            className="form-control"
-                                            id="content"
-                                            rows="5"
-                                            value={newPost.content}
-                                            onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label htmlFor="image_url" className="form-label">Image URL (optional)</label>
-                                        <input
-                                            type="url"
-                                            className="form-control"
-                                            id="image_url"
-                                            value={newPost.image_url}
-                                            onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
-                                        />
-                                    </div>
-                                    <button type="submit" className="btn btn-success">
-                                        Create Post
-                                    </button>
-                                </form>
+            <div className="d-flex mb-3">
+                <button
+                    className="btn btn-dark rounded-pill ms-auto"
+                    onClick={handleShowNewPost}
+                >
+                    {!showNewPost ? "Create a New Blog Post" : "Hide the Create New Post"}
+                    <i className="fas fa-circle-plus ms-2" />
+                </button>
+            </div>
+            {showNewPost && (
+                <div className="card mb-5">
+                    <div className="card-body">
+                        <h2 className="card-title mb-4">Create New Blog Post</h2>
+                        {(store.blogError || blogError) && (
+                            <div className="alert alert-danger" role="alert">
+                                {store.blogError || blogError}
                             </div>
-                        </div>
-                    )}
-
-                </>
+                        )}
+                        <form onSubmit={handleSubmit}>
+                            <div className="mb-3">
+                                <label htmlFor="title" className="form-label">Title</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    id="title"
+                                    value={newPost.title}
+                                    onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label htmlFor="content" className="form-label">Content</label>
+                                <textarea
+                                    className="form-control"
+                                    id="content"
+                                    rows="5"
+                                    value={newPost.content}
+                                    onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label htmlFor="image_url" className="form-label">Image URL (optional)</label>
+                                <input
+                                    type="url"
+                                    className="form-control"
+                                    id="image_url"
+                                    value={newPost.image_url}
+                                    onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-success">
+                                Create Post
+                            </button>
+                        </form>
+                    </div>
+                </div>
             )}
 
             <div className="card">
@@ -115,7 +119,7 @@ const Blog = () => {
                             {store.blogs.map((blog) => (
                                 <div key={blog.id} className="col">
                                     <div className="card h-100">
-                                        {parseInt(store.userId) === blog.author_id && (
+                                        {parseInt(store.currentUser?.id) === blog.author_id && (
                                             <button
                                                 onClick={() => handleDelete(blog.id)}
                                                 className="delete-btn"
@@ -150,7 +154,8 @@ const Blog = () => {
                                                         onClick={() => actions.handleBlogLikeToggle(blog.id, true)}
                                                         className={`btn btn-outline-success btn-sm me-2 ${blog.userLikeStatus === 'like' ? 'active' : ''
                                                             }`}
-                                                        disabled={!store.userId || parseInt(store.userId) === blog.author_id}
+                                                        // disabled={!store.currentUser.id || parseInt(store.currentUser.id) === blog.author_id}
+                                                        disabled={!store.token || store.currentUser.id === blog.author_id}
                                                     >
                                                         <i className="fas fa-thumbs-up me-1"></i>
                                                         <span>{blog.likes_count || 0}</span>
@@ -159,7 +164,8 @@ const Blog = () => {
                                                         onClick={() => actions.handleBlogLikeToggle(blog.id, false)}
                                                         className={`btn btn-outline-danger btn-sm ${blog.userLikeStatus === 'dislike' ? 'active' : ''
                                                             }`}
-                                                        disabled={!store.userId || parseInt(store.userId) === blog.author_id}
+                                                        // disabled={!store.currentUser.id || parseInt(store.currentUser.id) === blog.author_id}
+                                                        disabled={!store.token || store.currentUser.id === blog.author_id}
                                                     >
                                                         <i className="fas fa-thumbs-down me-1"></i>
                                                         <span>{blog.dislikes_count || 0}</span>
